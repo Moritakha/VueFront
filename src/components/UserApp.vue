@@ -1,0 +1,300 @@
+<template>
+  <div>
+    <div class="menubar">
+      <button @click="openModal">New User</button>
+      <button @click="editUser">Edit</button>
+      <button @click="getAll">Refresh</button>
+ 
+    </div>
+
+    <div v-if="isModalOpen" class="modal-container">
+      <div class="modal-content">
+        <span class="close" @click="closeModal">&times;</span>
+        <h2>New User</h2>
+        <!-- Formulario -->
+        <form class="form-container">
+          <div class="form-group">
+            <label for="username">Username</label>
+            <input type="text" id="username" v-model="newUser.username" required>
+          </div>
+          <div class="form-group">
+            <label for="password">Password</label>
+            <input type="password" id="password" v-model="newUser.password" required>
+          </div>
+          <div class="form-group">
+            <label for="email">Email</label>
+            <input type="email" id="email" v-model="newUser.email" required>
+          </div>
+          <div class="form-group">
+            <label for="createdAt">CreatedAt</label>
+            <input type="Timestamp" id="createdAt" v-model="newUser.createdAt" required>
+          </div>
+          <div class="form-group">
+            <label for="firtName">FirstName</label>
+            <input type="text" id="firstName" v-model="newUser.firstName">
+          </div>
+          <div class="form-group">
+            <label for="LastName">LastName</label>
+            <input type="text" id="email" v-model="newUser.lastName">
+          </div>
+          <div class="form-group">
+            <label for="age">Age</label>
+            <input type="number" id="age" v-model="newUser.age" >
+          </div>
+          <div class="form-group">
+            <label for="birthday">Birthday</label>
+            <input type="Date" id="birthday" v-model="newUser.birthday" >
+          </div>
+          <div class="form-group">
+            <label for="rolsIds">Rol</label>
+            <input type="Array" id="rolsIds" v-model="newUser.rolsIds">
+          </div>
+          <button @click="save">Save</button>
+          <button @click="goBack">Back</button>
+        </form>
+      </div>
+    </div>
+    <table class="custom-table">
+      <thead>
+        <tr>
+          <th class="text-left header-cell">Id</th>
+          <th class="text-left header-cell">Username</th>
+          <th class="text-left header-cell">Password</th>
+          <th class="text-left header-cell">Email</th>
+          <th class="text-left header-cell">Created At</th>
+          <th class="text-left header-cell">First Name</th>
+          <th class="text-left header-cell">Last Name</th>
+          <th class="text-left header-cell">Age</th>
+          <th class="text-left header-cell">Birthday</th>
+          <th class="text-left header-cell">Roles</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr v-for="user in users" :key="user.id" @click="selectRow(user)" :class="{ 'selected-row': isSelected(user) }">
+         <td class="data-cell">{{ user.id }}</td>
+          <td class="data-cell">{{ user.username }}</td>
+          <td class="data-cell">{{ user.password }}</td>
+          <td class="data-cell">{{ user.email }}</td>
+          <td class="data-cell">{{ user.createdAt }}</td>
+          <td class="data-cell">{{ user.firstName }}</td>
+          <td class="data-cell">{{ user.lastName }}</td>
+          <td class="data-cell">{{ user.age }}</td>
+          <td class="data-cell">{{ user.birthday }}</td>
+          <td class="data-cell">{{ user.rolsIds }}</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+</template>
+
+<script>
+import UserService from '@/service/UserService';
+
+export default {
+  name: "UserApp",
+  data() {
+    return {
+      users: null,
+      isModalOpen: false,
+      newUser: {
+        id:'',
+        username: '',
+        password:'',
+        email: '',
+        createdAt: new Date(),
+        firstName: '',
+        lastName: '', 
+        age: '',
+        birthday:'',
+        rolsIds: null,
+      },
+      selectedRow: null, // Nuevo dato para almacenar la fila seleccionada
+    };
+  },
+  UserService: null,
+
+  created() {
+    this.UserService = new UserService();
+  },
+  mounted() {
+    this.getAll();
+  },
+  methods: {
+
+    openModal() {
+      this.isModalOpen = true;
+    },
+
+    closeModal() {
+      this.isModalOpen = false;
+    },
+
+    goBack() {
+      this.closeModal();
+    },
+
+    getAll(){
+      this.UserService.getAll().then((data) => {
+      this.users = data.data;
+      }) 
+    },
+    save() {
+      if (this.newUser.id) {
+        this.UserService.editarUser(this.newUser.id, this.newUser)
+          .then(data => {
+            if (data.status === 200) {
+              this.newUser = {
+                id: '',
+                username: '',
+                password: '',
+                email: '',
+                createdAt: new Date(),
+                firstName: '',
+                lastName: '',
+                age: '',
+                birthday: '',
+                rolsIds: null,
+              };
+              this.getAll();
+              this.closeModal();
+            }
+          })
+          .catch(error => {
+            console.error('Error al guardar cambios:', error);
+          });
+      } else {
+        this.UserService.save(this.newUser)
+          .then(data => {
+            if (data.status === 200) {
+              this.newUser = {
+                username: '',
+                password: '',
+                email: '',
+                createdAt: new Date(),
+                firstName: '',
+                lastName: '',
+                age: '',
+                birthday: '',
+                rolsIds: null,
+              };
+              this.getAll();
+              this.closeModal();
+            }
+          })
+          .catch(error => {
+            console.error('Error al guardar nuevo usuario:', error);
+          });
+      }
+    },
+    selectRow(user) {
+      if (this.selectedRow === user) {
+        this.selectedRow = null;
+      } else {
+        this.selectedRow = user;
+      }
+    },
+
+    isSelected(user) {
+      return this.selectedRow === user;
+    },
+    editUser() {
+      if (this.selectedRow) {
+        // Copiar los datos de la fila seleccionada a newUser
+        this.newUser = { ...this.selectedRow };
+        this.openModal();
+      } else {
+        console.warn('No se ha seleccionado ninguna fila para editar.');
+      }
+    },
+  }
+}
+</script>
+
+<style>
+.menubar {
+  background-color: #8bd3c1; /* Verde celeste */
+  padding: 10px;
+  text-align: center;
+}
+
+.custom-table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-top: 20px;
+}
+
+.header-cell {
+  background-color: #8bd3c1; /* Verde celeste */
+  color: #fff; /* Texto en blanco */
+}
+
+.data-cell {
+  background-color: rgba(141, 196, 191, 0.5); /* Fondo opaco */
+  /* Puedes ajustar el color y la opacidad según tus preferencias */
+}
+
+.custom-table th,
+.custom-table td {
+  border: 1px solid #ddd;
+  padding: 8px;
+  text-align: left;
+}
+
+.custom-table tbody tr:hover {
+  background-color: #f5f5f5;
+}
+
+.modal-container {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-color: rgba(0, 0, 0, 0.5);
+  z-index: 999;
+}
+
+.modal-content {
+  background-color: #fff;
+  padding: 20px;
+  border-radius: 5px;
+  box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+  animation: slideIn 0.5s ease-out; /* Agrega animación de deslizamiento */
+}
+
+.close {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  font-size: 20px;
+  cursor: pointer;
+}
+
+.form-container {
+  display: flex;
+  flex-direction: column;
+}
+
+.form-group {
+  margin-bottom: 10px;
+}
+
+.selected-row {
+  background-color: blue;
+  color: white;
+}
+
+@keyframes slideIn {
+  from {
+    transform: translateY(-100%);
+  }
+  to {
+    transform: translateY(0);
+  }
+}
+
+
+</style>
