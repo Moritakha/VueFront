@@ -16,4 +16,9 @@ export default class UserService{
   editarUser(userId, userData) {
     return axios.put(`http://localhost:8080/api/user/${userId}`, userData);
   }
+  delete(userId) {
+    return axios.delete(`http://localhost:8080/api/user/${userId}`);
+  }
+
+  
 }

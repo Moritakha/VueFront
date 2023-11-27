@@ -1,10 +1,12 @@
 <template>
   <div>
     <div class="menubar">
-      <button @click="openModal">New User</button>
-      <button @click="editUser">Edit</button>
-      <button @click="getAll">Refresh</button>
- 
+      <div class="menu-buttons">
+       <button class="menu-button" @click="openModal">New User</button>
+       <button class="menu-button" @click="editUser">Edit</button>
+       <button class="menu-button" @click="openConfirmationModal">Delete</button>
+       <button class="menu-button" @click="getAll">Refresh</button>
+      </div>
     </div>
 
     <div v-if="isModalOpen" class="modal-container">
@@ -84,18 +86,24 @@
         </tr>
       </tbody>
     </table>
+    <ModalDelete v-if="isConfirmationModalOpen" @confirmed="deleteConfirmed" @canceled="closeConfirmationModal" />
   </div>
 </template>
 
 <script>
 import UserService from '@/service/UserService';
+import ModalDelete from '@/components/ModalDelete.vue';
 
 export default {
   name: "UserApp",
+  components: {
+    ModalDelete,
+  },
   data() {
     return {
       users: null,
       isModalOpen: false,
+      isConfirmationModalOpen: false,
       newUser: {
         id:'',
         username: '',
@@ -131,6 +139,13 @@ export default {
 
     goBack() {
       this.closeModal();
+    },
+
+    confirm() {
+      this.$emit('confirmed');
+    },
+    cancel() {
+      this.$emit('canceled');
     },
 
     getAll(){
@@ -206,95 +221,140 @@ export default {
         console.warn('No se ha seleccionado ninguna fila para editar.');
       }
     },
-  }
+    deleteUser() {
+      if (this.selectedRow) {
+        const userId = this.selectedRow.id;
+        this.UserService.delete(userId)
+          .then((response) => {
+            if (response.status === 200) {
+             this.selectedRow = null;
+             this.getAll();
+            }
+           })
+       .catch((error) => {
+      console.error('Error al eliminar el usuario:', error);
+    });
+  } 
+ },
+
+    openConfirmationModal() {
+      this.isConfirmationModalOpen = true;
+    },
+    closeConfirmationModal() {
+      this.isConfirmationModalOpen = false;
+    },
+    deleteConfirmed() {
+      this.deleteUser();
+      this.closeConfirmationModal();
+    },
+
+ }
 }
 </script>
 
 <style>
-.menubar {
-  background-color: #8bd3c1; /* Verde celeste */
-  padding: 10px;
-  text-align: center;
-}
-
-.custom-table {
-  width: 100%;
-  border-collapse: collapse;
-  margin-top: 20px;
-}
-
-.header-cell {
-  background-color: #8bd3c1; /* Verde celeste */
-  color: #fff; /* Texto en blanco */
-}
-
-.data-cell {
-  background-color: rgba(141, 196, 191, 0.5); /* Fondo opaco */
-  /* Puedes ajustar el color y la opacidad según tus preferencias */
-}
-
-.custom-table th,
-.custom-table td {
-  border: 1px solid #ddd;
-  padding: 8px;
-  text-align: left;
-}
-
-.custom-table tbody tr:hover {
-  background-color: #f5f5f5;
-}
-
-.modal-container {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  position: fixed;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
-  background-color: rgba(0, 0, 0, 0.5);
-  z-index: 999;
-}
-
-.modal-content {
-  background-color: #fff;
-  padding: 20px;
-  border-radius: 5px;
-  box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
-  animation: slideIn 0.5s ease-out; /* Agrega animación de deslizamiento */
-}
-
-.close {
-  position: absolute;
-  top: 10px;
-  right: 10px;
-  font-size: 20px;
-  cursor: pointer;
-}
-
-.form-container {
-  display: flex;
-  flex-direction: column;
-}
-
-.form-group {
-  margin-bottom: 10px;
-}
-
-.selected-row {
-  background-color: blue;
-  color: white;
-}
-
-@keyframes slideIn {
-  from {
-    transform: translateY(-100%);
+  .menubar {
+    font-family: 'Arial', sans-serif;
+    background-color: #8bd3c1;
+    padding: 10px;
+    text-align: center;
   }
-  to {
-    transform: translateY(0);
+  .menu-buttons {
+      display: flex;
+      justify-content: space-around;
+      margin-top: 5px; /* Reduzco el espacio entre la barra de menú y los botones */
+    }
+
+    .menu-button {
+      padding: 10px;
+      background-color: #5f9ea0; /* Cambio el color de fondo a blanco */
+      color: white; /* Cambio el color del texto a blanco */
+      border: 1px solid #5f9ea0;
+      border-radius: 5px;
+      cursor: pointer;
+    }
+
+  .custom-table {
+    font-family: 'Arial', sans-serif;
+    width: 100%;
+    border-collapse: collapse;
+    margin-top: 20px;
   }
-}
+
+  .header-cell {
+    background-color: #8bd3c1;
+    color: #000000;
+  }
+
+  .data-cell {
+    background-color: rgba(141, 196, 191, 0.5);
+  }
+
+  .custom-table th,
+  .custom-table td {
+    border: 1px solid #ddd;
+    padding: 8px;
+    text-align: left;
+    font-family: 'Arial', sans-serif;
+    color: #333;
+  }
+
+  .custom-table tbody tr:hover {
+    background-color: #f5f5f5;
+  }
+
+  .modal-container {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.5);
+    z-index: 999;
+  }
+
+  .modal-content {
+    background-color: #fff;
+    padding: 20px;
+    border-radius: 5px;
+    box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+    animation: slideIn 0.5s ease-out;
+    font-family: 'Arial', sans-serif;
+    color: #333; 
+  }
+
+  .close {
+    position: absolute;
+    top: 10px;
+    right: 10px;
+    font-size: 20px;
+    cursor: pointer;
+  }
+
+  .form-container {
+    display: flex;
+    flex-direction: column;
+  }
+
+  .form-group {
+    margin-bottom: 10px;
+  }
 
 
+  .selected-row {
+    background-color: blue;
+    color: white;
+  }
+
+  @keyframes slideIn {
+    from {
+      transform: translateY(-100%);
+    }
+    to {
+      transform: translateY(0);
+    }
+  }
 </style>
