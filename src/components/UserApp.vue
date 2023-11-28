@@ -32,12 +32,12 @@
             <input type="Timestamp" id="createdAt" v-model="newUser.createdAt" required>
           </div>
           <div class="form-group">
-            <label for="firtName">FirstName</label>
+            <label for="firstName">FirstName</label>
             <input type="text" id="firstName" v-model="newUser.firstName">
           </div>
           <div class="form-group">
-            <label for="LastName">LastName</label>
-            <input type="text" id="email" v-model="newUser.lastName">
+            <label for="lastName">LastName</label>
+            <input type="text" id="lastName" v-model="newUser.lastName">
           </div>
           <div class="form-group">
             <label for="age">Age</label>
@@ -46,10 +46,6 @@
           <div class="form-group">
             <label for="birthday">Birthday</label>
             <input type="Date" id="birthday" v-model="newUser.birthday" >
-          </div>
-          <div class="form-group">
-            <label for="rolsIds">Rol</label>
-            <input type="Array" id="rolsIds" v-model="newUser.rolsIds">
           </div>
           <button @click="save">Save</button>
           <button @click="goBack">Back</button>
@@ -68,7 +64,6 @@
           <th class="text-left header-cell">Last Name</th>
           <th class="text-left header-cell">Age</th>
           <th class="text-left header-cell">Birthday</th>
-          <th class="text-left header-cell">Roles</th>
         </tr>
       </thead>
       <tbody>
@@ -82,7 +77,6 @@
           <td class="data-cell">{{ user.lastName }}</td>
           <td class="data-cell">{{ user.age }}</td>
           <td class="data-cell">{{ user.birthday }}</td>
-          <td class="data-cell">{{ user.rolsIds }}</td>
         </tr>
       </tbody>
     </table>
@@ -114,7 +108,6 @@ export default {
         lastName: '', 
         age: '',
         birthday:'',
-        rolsIds: null,
       },
       selectedRow: null, // Nuevo dato para almacenar la fila seleccionada
     };
@@ -154,31 +147,10 @@ export default {
       }) 
     },
     save() {
-      if (this.newUser.id) {
-        this.UserService.editarUser(this.newUser.id, this.newUser)
-          .then(data => {
-            if (data.status === 200) {
-              this.newUser = {
-                id: '',
-                username: '',
-                password: '',
-                email: '',
-                createdAt: new Date(),
-                firstName: '',
-                lastName: '',
-                age: '',
-                birthday: '',
-                rolsIds: null,
-              };
-              this.getAll();
-              this.closeModal();
-            }
-          })
-          .catch(error => {
-            console.error('Error al guardar cambios:', error);
-          });
-      } else {
-        this.UserService.save(this.newUser)
+      if(this.newUser.id){
+        this.saveEditedUser();
+      }else{
+      this.UserService.save(this.newUser)
           .then(data => {
             if (data.status === 200) {
               this.newUser = {
@@ -190,7 +162,6 @@ export default {
                 lastName: '',
                 age: '',
                 birthday: '',
-                rolsIds: null,
               };
               this.getAll();
               this.closeModal();
@@ -199,7 +170,7 @@ export default {
           .catch(error => {
             console.error('Error al guardar nuevo usuario:', error);
           });
-      }
+        }
     },
     selectRow(user) {
       if (this.selectedRow === user) {
@@ -214,13 +185,25 @@ export default {
     },
     editUser() {
       if (this.selectedRow) {
-        // Copiar los datos de la fila seleccionada a newUser
         this.newUser = { ...this.selectedRow };
         this.openModal();
       } else {
         console.warn('No se ha seleccionado ninguna fila para editar.');
       }
     },
+    saveEditedUser() {
+       this.UserService.editarUser(this.newUser.id, this.newUser)
+       .then(data => {
+      if (data.status === 200) {
+        this.resetNewUser();
+        this.getAll();
+        this.closeModal();
+        }
+      })
+     .catch(error => {
+      console.error('Error al guardar cambios:', error);
+        });
+     },
     deleteUser() {
       if (this.selectedRow) {
         const userId = this.selectedRow.id;

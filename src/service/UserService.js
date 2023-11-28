@@ -5,7 +5,6 @@ export default class UserService{
   url = "http://localhost:8080/api/user?detailed=true"
 
   getAll(){
-
     return axios.get(this.url);
   }
 
